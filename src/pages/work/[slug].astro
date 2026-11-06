@@ -1,0 +1,72 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const work = await getCollection('work', ({ data }) => !data.draft);
+  return work.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const LIGHTS: Record<string, string> = {
+  mint: 'var(--light-mint)',
+  lilac: 'var(--light-lilac)',
+  butter: 'var(--light-butter)',
+  sky: 'var(--light-sky)',
+  rose: 'var(--light-rose)',
+  warm: 'var(--light-warm)',
+};
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+---
+<Base title={`${d.title} — Vince Guan`} description={d.summary}>
+  <article class="case">
+    <p class="back"><a href="/#room">Back to the projector</a></p>
+    <h1>{d.title}</h1>
+    <p class="meta">{d.meta}</p>
+    <div class="sheet facet" style={`background: ${LIGHTS[d.light]}`}>
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .case {
+    padding-top: var(--space-4);
+  }
+  .back {
+    margin: 0 0 var(--space-3);
+    font-size: 15px;
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-size: var(--step-2);
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    max-width: 24ch;
+  }
+  .meta {
+    margin: 0 0 var(--space-4);
+    color: var(--on-room-muted);
+  }
+  .sheet {
+    color: var(--on-light);
+    padding: clamp(24px, 4vw, 56px);
+  }
+  .sheet > :global(*) {
+    max-width: 68ch;
+  }
+  .sheet :global(h2) {
+    font-size: var(--step-1);
+    margin: var(--space-4) 0 var(--space-1);
+    font-weight: 700;
+  }
+  .sheet :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .sheet :global(p) {
+    margin: 0 0 var(--space-2);
+  }
+</style>

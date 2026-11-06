@@ -1,0 +1,51 @@
+/*
+  Design tokens. Every component uses ONLY these values.
+  Concept: a low-poly, PS2-era projection room. Dark warm room, faceted surfaces,
+  a binder of slides, a projector. Pastels are the light each slide throws on the screen.
+*/
+:root {
+  /* Room */
+  --room-0: #170e07; /* deepest background */
+  --room-1: #1d120b;
+  --room-2: #24170e;
+  --room-3: #281a10;
+  --panel-hi: #4e3422; /* faceted panel, lit half */
+  --panel-lo: #3f2919; /* faceted panel, shaded half */
+  --panel-active-hi: #7a4e2c;
+  --panel-active-lo: #6a4224;
+  --danger: #6b2e1c; /* eject */
+  --accent: #e8a64a; /* focus rings, the projector badge */
+
+  /* Light each slide throws (pastels) */
+  --light-mint: #cdebdc;
+  --light-lilac: #e1daf4;
+  --light-butter: #f5ebb5;
+  --light-sky: #cfe2f4;
+  --light-rose: #f5dde4;
+  --light-warm: #fff3de;
+
+  /* Ink */
+  --on-room: #f6ebdd;
+  --on-room-muted: #e3d3bf;
+  --on-light: #1c2126; /* text on a lit pastel */
+  --on-light-muted: #3a434c;
+
+  /* Type: one family, one scale. Do not add sizes. */
+  --font: 'Schibsted Grotesk', system-ui, sans-serif;
+  --step--1: 0.875rem; /* 14px */
+  --step-0: 1.0625rem; /* 17px */
+  --step-1: 1.625rem; /* 26px */
+  --step-2: clamp(1.875rem, 3.4vw, 2.75rem); /* page titles */
+
+  /* Space */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4.5rem;
+
+  /* Facets: corners are cut, never rounded */
+  --facet: 14px;
+  --facet-sm: 8px;
+  --content-max: 1200px;
+}

@@ -1,0 +1,41 @@
+---
+// A field of flat-shaded triangles behind the page. Deterministic, built at compile time.
+let seed = 7;
+const rnd = () => {
+  seed = (seed * 16807) % 2147483647;
+  return (seed - 1) / 2147483646;
+};
+const cols = 12, rows = 10, W = 1440, H = 1800;
+const pts: [number, number][][] = [];
+for (let r = 0; r <= rows; r++) {
+  const row: [number, number][] = [];
+  for (let c = 0; c <= cols; c++) {
+    const edge = r === 0 || r === rows || c === 0 || c === cols;
+    row.push([(c * W) / cols + (edge ? 0 : (rnd() - 0.5) * 90), (r * H) / rows + (edge ? 0 : (rnd() - 0.5) * 120)]);
+  }
+  pts.push(row);
+}
+const shades = ['var(--room-1)', 'var(--room-2)', 'var(--room-3)', 'var(--room-1)', 'var(--room-0)', 'var(--room-2)'];
+const f = (p: [number, number]) => `${p[0].toFixed(0)},${p[1].toFixed(0)}`;
+const tris: { pts: string; fill: string }[] = [];
+for (let r = 0; r < rows; r++) {
+  for (let c = 0; c < cols; c++) {
+    const a = pts[r][c], b = pts[r][c + 1], d = pts[r + 1][c], e = pts[r + 1][c + 1];
+    tris.push({ pts: `${f(a)} ${f(b)} ${f(e)}`, fill: shades[Math.floor(rnd() * shades.length)] });
+    tris.push({ pts: `${f(a)} ${f(e)} ${f(d)}`, fill: shades[Math.floor(rnd() * shades.length)] });
+  }
+}
+---
+<svg class="backdrop" aria-hidden="true" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+  {tris.map((t) => <polygon points={t.pts} style={`fill: ${t.fill}`} />)}
+</svg>
+
+<style>
+  .backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+</style>

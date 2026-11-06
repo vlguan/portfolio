@@ -1,0 +1,106 @@
+---
+import '../styles/global.css';
+import Grain from '../components/Grain.astro';
+import LowPolyBackdrop from '../components/LowPolyBackdrop.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const {
+  title,
+  description = 'Vince Guan — forward deployed engineer building voice agents, agent tooling and the infrastructure under them.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
+    />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <div class="room">
+      <LowPolyBackdrop />
+      <div class="page">
+        <header class="site-header facet shaded">
+          <a href="/" class="name">Vince Guan</a>
+          <p>Forward deployed engineer. Film photographer. Potter.</p>
+        </header>
+        <main>
+          <slot />
+        </main>
+        <footer class="site-footer facet">
+          <p>Email: <a href="mailto:you@example.com">you@example.com</a></p>
+          <nav aria-label="Elsewhere">
+            <a href="https://github.com/">GitHub</a>
+            <a href="https://www.linkedin.com/">LinkedIn</a>
+            <a href="/resume.pdf">Résumé (PDF)</a>
+          </nav>
+        </footer>
+      </div>
+    </div>
+    <Grain />
+  </body>
+</html>
+
+<style>
+  .room {
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+  }
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 24px clamp(12px, 3vw, 40px) 0;
+  }
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 24px;
+    padding: 16px 26px;
+  }
+  .site-header p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--on-room-muted);
+  }
+  .name {
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .site-footer {
+    margin: var(--space-4) 0 48px;
+    padding: 20px 26px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 24px;
+    font-size: 15px;
+    background: linear-gradient(160deg, var(--panel-lo) 0 52%, #33200f 52% 100%);
+  }
+  .site-footer p {
+    margin: 0;
+  }
+  .site-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+  }
+</style>

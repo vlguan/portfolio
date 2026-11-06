@@ -1,0 +1,458 @@
+---
+/**
+ * The home page's projection room: a low-poly 3D scene (src/scripts/projector-scene.ts)
+ * with real HTML panels pinned over its screen. Every slide's panel is rendered here at
+ * build time; the script only shows/hides them.
+ */
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import VoiceReplay from './VoiceReplay.astro';
+
+const LIGHTS: Record<string, string> = {
+  mint: '#cdebdc',
+  lilac: '#e1daf4',
+  butter: '#f5ebb5',
+  sky: '#cfe2f4',
+  rose: '#f5dde4',
+  warm: '#fff3de',
+};
+
+const work = (await getCollection('work', ({ data }) => !data.draft)).sort((a, b) => a.data.order - b.data.order);
+const photos = (await getCollection('photos')).sort((a, b) => a.data.order - b.data.order);
+const ceramics = (await getCollection('ceramics')).sort((a, b) => a.data.order - b.data.order);
+
+type Slide = {
+  id: string;
+  n: string;
+  label: string;
+  light: string;
+  title: string;
+  summary: string;
+  meta: string;
+  cta: string;
+  href: string;
+  kind: 'replay' | 'media' | 'photos' | 'ceramics';
+  entry?: (typeof work)[number];
+};
+
+const unnumbered: Omit<Slide, 'n'>[] = [
+  ...work.map((w) => ({
+    id: w.id,
+    label: w.data.short,
+    light: LIGHTS[w.data.light],
+    title: w.data.title,
+    summary: w.data.summary,
+    meta: w.data.meta,
+    cta: w.data.cta,
+    href: `/work/${w.id}/`,
+    kind: (w.data.media === 'voice-replay' ? 'replay' : 'media') as Slide['kind'],
+    entry: w,
+  })),
+  {
+    id: 'photographs',
+    label: 'Photographs',
+    light: LIGHTS.warm,
+    title: 'Photographs',
+    summary: 'Shot on 35mm with a Pentax KM, grouped by roll and place.',
+    meta: photos[0] ? `${photos[0].data.series}, ${photos[0].data.film}` : '',
+    cta: 'See all series',
+    href: '/#room',
+    kind: 'photos',
+  },
+  {
+    id: 'ceramics',
+    label: 'Ceramics',
+    light: LIGHTS.rose,
+    title: 'Ceramics',
+    summary: 'Wheel-thrown pieces from the studio, each with its clay, glaze and firing.',
+    meta: ceramics[0] ? `${ceramics[0].data.clay}, ${ceramics[0].data.glaze}, ${ceramics[0].data.firing}` : '',
+    cta: 'See all pieces',
+    href: '/#room',
+    kind: 'ceramics',
+  },
+];
+const slides: Slide[] = unnumbered.map((s, i) => ({ ...s, n: String(i + 1) }));
+
+const sceneSlides = slides.map(({ id, n, label, light }) => ({ id, n, label, light }));
+---
+<section id="room" class="room-section" aria-label="Projection room">
+  <div class="stage-frame facet">
+    <div class="stage" data-stage>
+      <canvas
+        width="400"
+        height="225"
+        data-canvas
+        role="img"
+        aria-label="Low-poly 3D room: a projector and a binder of slides on a desk, facing a projection screen"
+      ></canvas>
+
+      <div class="screen" data-screen role="region" aria-live="polite" aria-label="Projection screen">
+        <div class="screen-inner" data-screen-inner>
+          {
+            slides.map((s) => (
+              <article class="panel" data-slide-panel={s.id} hidden style={`--panel-light: ${s.light}`}>
+                <div class="panel-media">
+                  {s.kind === 'replay' && <VoiceReplay />}
+                  {s.kind === 'media' &&
+                    (s.entry?.data.cover ? (
+                      <Image src={s.entry.data.cover} alt={s.entry.data.coverAlt ?? ''} widths={[400, 800]} sizes="400px" class="facet-sm" />
+                    ) : (
+                      <div class="placeholder facet-sm">{s.entry?.data.placeholder ?? 'Image to come'}</div>
+                    ))}
+                  {s.kind === 'photos' && (
+                    <div class="tiles">
+                      {photos.slice(0, 6).map((p) =>
+                        p.data.image ? (
+                          <Image src={p.data.image} alt={p.data.alt ?? ''} widths={[200, 400]} sizes="200px" class="tile facet-sm" />
+                        ) : (
+                          <div class="tile facet-sm">Photo {p.data.frame}</div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                  {s.kind === 'ceramics' && (
+                    <div class="tiles">
+                      {ceramics.slice(0, 6).map((c, i) =>
+                        c.data.image ? (
+                          <Image src={c.data.image} alt={c.data.alt ?? ''} widths={[200, 400]} sizes="200px" class="tile tile--square facet-sm" />
+                        ) : (
+                          <div class="tile tile--square facet-sm">Piece {i + 1}</div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div class="panel-copy">
+                  <p class="slide-no">Slide {s.n}</p>
+                  <h2>{s.title}</h2>
+                  <p class="summary">{s.summary}</p>
+                  <p class="meta">{s.meta}</p>
+                  <a href={s.href}>{s.cta}</a>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="hint" data-hint aria-live="polite">Click a slide in the binder, or drag it onto the projector.</p>
+
+  <div class="tray" role="group" aria-label="Slides">
+    {
+      slides.map((s) => (
+        <button type="button" class="chip facet-sm" data-load={s.id} aria-pressed="false">
+          <span class="swatch" aria-hidden="true" style={`background: ${s.light}`} />
+          <span>
+            {s.n}&nbsp;&nbsp;{s.label}
+          </span>
+        </button>
+      ))
+    }
+    <button type="button" class="chip chip--eject facet-sm" data-eject hidden>Eject</button>
+  </div>
+
+  <noscript>
+    <ul class="noscript-list">
+      {slides.map((s) => <li><a href={s.href}>{s.title}</a></li>)}
+    </ul>
+  </noscript>
+</section>
+
+<script type="application/json" data-slides set:html={JSON.stringify(sceneSlides)} />
+
+<style>
+  .room-section {
+    margin-top: 18px;
+  }
+  .stage-frame {
+    background: #0e0804;
+    padding: 6px;
+  }
+  .stage {
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    image-rendering: pixelated;
+    touch-action: manipulation;
+  }
+  canvas.is-grab {
+    cursor: grab;
+  }
+  canvas.is-grabbing {
+    cursor: grabbing;
+  }
+
+  /* The HTML screen: pinned over the 3D screen by script, at a fixed 640x360 design size, scaled. */
+  .screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 250ms ease;
+  }
+  .screen-inner {
+    width: 640px;
+    height: 360px;
+    transform-origin: 0 0;
+  }
+  .panel {
+    width: 640px;
+    height: 360px;
+    padding: 28px 30px;
+    display: flex;
+    gap: 24px;
+    color: var(--on-light);
+  }
+  .panel[hidden] {
+    display: none;
+  }
+  .panel.is-focusing {
+    animation: focus-in 900ms ease-out both;
+  }
+  @keyframes focus-in {
+    0% {
+      filter: blur(8px) brightness(1.5);
+      opacity: 0.15;
+    }
+    60% {
+      filter: blur(2px);
+      opacity: 1;
+    }
+    100% {
+      filter: none;
+      opacity: 1;
+    }
+  }
+  .panel-media {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+  }
+  .panel-media :global(img) {
+    width: 100%;
+    object-fit: cover;
+  }
+  .placeholder {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.7);
+    display: grid;
+    place-items: center;
+    color: #4a525b;
+    font-size: 15px;
+    text-align: center;
+    padding: 16px;
+  }
+  .tiles {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-content: center;
+  }
+  .tile {
+    aspect-ratio: 3 / 2;
+    background: rgba(255, 255, 255, 0.72);
+    display: grid;
+    place-items: center;
+    color: #5a5046;
+    font-size: 12px;
+    object-fit: cover;
+    width: 100%;
+  }
+  .tile--square {
+    aspect-ratio: 1 / 1;
+  }
+  .panel-copy {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .slide-no {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--on-light-muted);
+  }
+  .panel-copy h2 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .summary {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .meta {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: var(--on-light-muted);
+  }
+  .panel-copy a {
+    align-self: flex-start;
+    margin-top: 12px;
+    color: var(--on-light);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .hint {
+    margin: 12px 4px 0;
+    min-height: 26px;
+    font-size: 15px;
+    color: var(--on-room-muted);
+  }
+  .tray {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .chip {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px 0 10px;
+    border: 0;
+    background: linear-gradient(160deg, var(--panel-hi) 0 50%, var(--panel-lo) 50% 100%);
+    color: var(--on-room);
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    transition:
+      transform 140ms ease,
+      filter 140ms ease;
+  }
+  .chip:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+  }
+  .chip[aria-pressed='true'] {
+    background: linear-gradient(160deg, var(--panel-active-hi) 0 50%, var(--panel-active-lo) 50% 100%);
+  }
+  .chip[hidden] {
+    display: none;
+  }
+  .chip--eject {
+    padding: 0 18px;
+    background: var(--danger);
+    font-weight: 600;
+  }
+  .swatch {
+    width: 22px;
+    height: 16px;
+    clip-path: polygon(0 30%, 30% 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+  }
+  .noscript-list {
+    margin: var(--space-2) 0 0;
+  }
+
+  /* Phones: the 3D screen is too small to read, so the panel drops below the room. */
+  @media (max-width: 760px) {
+    .screen {
+      position: static;
+      width: auto !important;
+      height: auto !important;
+      opacity: 1 !important;
+      margin-top: 12px;
+      overflow: visible;
+    }
+    .screen-inner {
+      width: auto;
+      height: auto;
+      transform: none !important;
+    }
+    .panel {
+      width: auto;
+      height: auto;
+      flex-direction: column;
+      padding: 22px;
+      background: var(--panel-light);
+      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    }
+    .panel-copy h2 {
+      font-size: 26px;
+    }
+    .summary {
+      font-size: 17px;
+    }
+  }
+</style>
+
+<script>
+  import { createProjectorScene, type SlideDef } from '../scripts/projector-scene';
+
+  const root = document.querySelector<HTMLElement>('[data-stage]');
+  const dataEl = document.querySelector<HTMLScriptElement>('script[data-slides]');
+  if (root && dataEl) {
+    const slides: SlideDef[] = JSON.parse(dataEl.textContent || '[]');
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    const screen = root.querySelector<HTMLElement>('[data-screen]')!;
+    const inner = root.querySelector<HTMLElement>('[data-screen-inner]')!;
+    const hint = document.querySelector<HTMLElement>('[data-hint]')!;
+    const eject = document.querySelector<HTMLButtonElement>('[data-eject]')!;
+    const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-load]')];
+    const panels = [...document.querySelectorAll<HTMLElement>('[data-slide-panel]')];
+    const label = (id: string | null) => {
+      const s = slides.find((x) => x.id === id);
+      return s ? `Slide ${s.n}: ${s.label}` : '';
+    };
+    const defaultHint = 'Click a slide in the binder, or drag it onto the projector.';
+    let current: string | null = null;
+
+    const show = (id: string | null) => {
+      current = id;
+      scene?.setCurrent(id);
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.load === id)));
+      eject.hidden = !id;
+      panels.forEach((p) => {
+        const on = p.dataset.slidePanel === id;
+        p.hidden = !on;
+        if (on) {
+          p.classList.remove('is-focusing');
+          void p.offsetWidth; // restart the focus animation
+          p.classList.add('is-focusing');
+          p.dispatchEvent(new CustomEvent('slide:shown'));
+        }
+      });
+      hint.textContent = id ? `Now showing ${label(id).toLowerCase()}. Pick another, or eject.` : defaultHint;
+      if (!scene) screen.style.opacity = id ? '1' : '0';
+    };
+
+    const scene = createProjectorScene(canvas, {
+      slides,
+      onLoad: (id) => show(id),
+      onHover: (id) => {
+        canvas.classList.toggle('is-grab', !!id);
+        hint.textContent = id ? label(id) : current ? `Now showing ${label(current).toLowerCase()}.` : defaultHint;
+      },
+      onDragState: (dragging, over) => {
+        canvas.classList.toggle('is-grabbing', dragging);
+        if (dragging) hint.textContent = over ? 'Let go to load the slide.' : 'Drop it on the projector.';
+      },
+      onScreenRect: (r, glow) => {
+        screen.style.left = `${r.x}px`;
+        screen.style.top = `${r.y}px`;
+        screen.style.width = `${r.w}px`;
+        screen.style.height = `${r.h}px`;
+        screen.style.opacity = glow > 0.6 ? '1' : '0';
+        inner.style.transform = `scale(${Math.min(r.w / 640, r.h / 360)})`;
+      },
+    });
+
+    chips.forEach((c) => c.addEventListener('click', () => show(c.dataset.load!)));
+    eject.addEventListener('click', () => show(null));
+  }
+</script>
